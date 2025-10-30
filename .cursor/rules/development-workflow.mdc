@@ -1,0 +1,352 @@
+---
+alwaysApply: true
+description: Development workflow and Git practices for Chat Engine Turbo
+---
+
+# Development Workflow & Git Practices
+
+## 🚀 **Development Environment Setup**
+
+### **Prerequisites**
+
+- Node.js 18+
+- MongoDB 6+
+- Redis (for caching)
+- Docker (optional, for containerized development)
+
+### **Quick Start**
+
+```bash
+# Install dependencies
+npm install
+
+# Setup environment
+cp .env.example .env
+# Configure DATABASE_URL, JWT_SECRET, etc.
+
+# Generate Prisma client
+npx prisma generate
+
+# Run database migrations
+npx prisma db push
+
+# Start development server
+npm run start:dev
+```
+
+## 🔧 **Available Scripts**
+
+Based on [package.json](mdc:package.json):
+
+```bash
+# Development
+npm run start:dev          # Start with hot reload
+npm run start:debug        # Start with debugging
+
+# Building
+npm run build              # Build for production
+npm run start:prod         # Start production build
+
+# Code Quality
+npm run lint               # Run ESLint with auto-fix
+npm run format             # Format code with Prettier
+
+# Testing
+npm run test               # Run unit tests
+npm run test:watch         # Run tests in watch mode
+npm run test:cov           # Run tests with coverage
+npm run test:e2e           # Run end-to-end tests
+```
+
+## 📝 **Git Workflow**
+
+### **Branch Strategy**
+
+```
+main                    # Production branch
+├── develop            # Development branch
+├── feature/chat-api   # Feature branches
+├── bugfix/auth-fix    # Bug fix branches
+└── hotfix/critical    # Hotfix branches
+```
+
+### **Commit Message Convention**
+
+```
+type(scope): description
+
+feat(chat): add real-time message broadcasting
+fix(auth): resolve JWT token validation issue
+docs(api): update chat endpoints documentation
+test(chat): add unit tests for chat service
+refactor(db): optimize chat queries with indexes
+```
+
+### **Commit Types**
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+## 🏗️ **Feature Development Process**
+
+### **1. Planning Phase**
+
+```bash
+# Create feature branch
+git checkout develop
+git pull origin develop
+git checkout -b feature/chat-notifications
+
+# Update project documentation
+# Add feature to README.md checklist
+```
+
+### **2. Development Phase**
+
+```bash
+# Start development server
+npm run start:dev
+
+# Run tests in watch mode
+npm run test:watch
+
+# Check code quality
+npm run lint
+npm run format
+```
+
+### **3. Testing Phase**
+
+```bash
+# Run all tests
+npm run test
+npm run test:e2e
+
+# Check test coverage
+npm run test:cov
+
+# Manual testing checklist
+# - [ ] API endpoints work correctly
+# - [ ] Database operations are efficient
+# - [ ] Error handling is proper
+# - [ ] Authentication/authorization works
+```
+
+### **4. Code Review Phase**
+
+```bash
+# Push feature branch
+git push origin feature/chat-notifications
+
+# Create Pull Request with:
+# - Clear description of changes
+# - Link to related issues
+# - Screenshots (if UI changes)
+# - Testing checklist
+```
+
+## 🔍 **Code Quality Standards**
+
+### **ESLint Configuration**
+
+Based on [eslint.config.mjs](mdc:eslint.config.mjs):
+
+- Use semicolons
+- Prefer const/let over var
+- No unused variables
+- Consistent indentation (2 spaces)
+- TypeScript strict mode
+
+### **Prettier Configuration**
+
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2
+}
+```
+
+### **TypeScript Configuration**
+
+Based on [tsconfig.json](mdc:tsconfig.json):
+
+- Strict null checks enabled
+- No implicit any
+- Experimental decorators enabled
+- ES2023 target
+
+## 🗄️ **Database Management**
+
+### **Prisma Workflow**
+
+```bash
+# After schema changes
+npx prisma generate        # Generate Prisma client
+npx prisma db push         # Push schema to database
+npx prisma studio          # Open Prisma Studio
+
+# For production migrations
+npx prisma migrate dev     # Create and apply migration
+npx prisma migrate deploy  # Deploy migrations to production
+```
+
+### **Database Seeding**
+
+```bash
+# Seed development database
+npx prisma db seed
+
+# Reset database (development only)
+npx prisma migrate reset
+```
+
+## 🚀 **Deployment Process**
+
+### **Environment Configuration**
+
+```bash
+# Production environment variables
+DATABASE_URL=mongodb://...
+JWT_SECRET=your-secret-key
+REDIS_URL=redis://...
+NODE_ENV=production
+PORT=3000
+```
+
+### **Build & Deploy**
+
+```bash
+# Build application
+npm run build
+
+# Run production server
+npm run start:prod
+
+# Docker deployment (if using)
+docker build -t chat-engine-turbo .
+docker run -p 3000:3000 chat-engine-turbo
+```
+
+## 📊 **Monitoring & Debugging**
+
+### **Logging Strategy**
+
+```typescript
+// Use structured logging
+this.logger.log('Chat created', { chatId, tenantId });
+this.logger.error('Database connection failed', { error: error.message });
+this.logger.warn('Rate limit exceeded', { userId, endpoint });
+```
+
+### **Performance Monitoring**
+
+- Monitor database query performance
+- Track API response times
+- Monitor memory usage
+- Set up alerts for errors
+
+## 🧪 **Testing Strategy**
+
+### **Test Coverage Requirements**
+
+- Unit tests: 80%+ coverage
+- Integration tests: Critical paths
+- E2E tests: Main user workflows
+- Performance tests: Load testing
+
+### **Test Data Management**
+
+```bash
+# Use test database
+DATABASE_URL=mongodb://localhost:27017/chat-engine-test
+
+# Clean test data after each test
+# Use factories for consistent test data
+```
+
+## 📚 **Documentation Standards**
+
+### **Code Documentation**
+
+```typescript
+/**
+ * Creates a new chat conversation
+ * @param dto - Chat creation data
+ * @param tenantId - Tenant identifier for multi-tenancy
+ * @returns Promise<Chat> - Created chat object
+ * @throws NotFoundException - When tenant not found
+ * @throws ConflictException - When chat title already exists
+ */
+async createChat(dto: CreateChatDto, tenantId: string): Promise<Chat> {
+  // Implementation...
+}
+```
+
+### **API Documentation**
+
+- Use OpenAPI/Swagger for API docs
+- Document all endpoints with examples
+- Include error response schemas
+- Update docs with each API change
+
+## 🔄 **Continuous Integration**
+
+### **Pre-commit Hooks**
+
+```bash
+# Install husky for git hooks
+npm install --save-dev husky
+
+# Pre-commit checks
+npm run lint
+npm run test
+npm run build
+```
+
+### **CI/CD Pipeline**
+
+```yaml
+# .github/workflows/ci.yml
+name: CI/CD Pipeline
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+```
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues**
+
+1. **Database Connection**: Check DATABASE_URL format
+2. **Prisma Client**: Run `npx prisma generate` after schema changes
+3. **Port Conflicts**: Change PORT in .env file
+4. **Memory Issues**: Increase Node.js memory limit
+
+### **Debug Commands**
+
+```bash
+# Debug with Node.js inspector
+npm run start:debug
+
+# Check database connection
+npx prisma db pull
+
+# Validate Prisma schema
+npx prisma validate
+```

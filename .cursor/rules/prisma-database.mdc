@@ -1,0 +1,355 @@
+---
+globs: *.prisma,prisma/**/*,src/**/*.ts
+description: Prisma database patterns and MongoDB best practices
+---
+
+# Prisma + MongoDB Database Patterns
+
+## 🗄️ **Database Schema Patterns**
+
+### **Multi-Tenant Architecture**
+
+Based on [prisma/schema.prisma](mdc:prisma/schema.prisma), this project uses a hierarchical multi-tenant structure:
+
+```
+Project → ProjectTenant → Members/Agents
+```
+
+### **Key Relationships**
+
+- **Project**: Top-level organization
+- **ProjectTenant**: Tenant isolation within projects
+- **Member**: Users with roles (AGENT, SUPERVISOR, ADMIN, AUDIT)
+- **AgentAnswer**: Bot agents with canned responses
+- **Conversation**: Chat sessions with messages
+
+## 🔧 **Prisma Service Pattern**
+
+### **Base Prisma Service**
+
+```typescript
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+
+  // Multi-tenant query helper
+  async findManyWithTenant<T>(
+    model: string,
+    tenantId: string,
+    options?: any,
+  ): Promise<T[]> {
+    return this[model].findMany({
+      where: {
+        ...options?.where,
+        projectTenantId: tenantId,
+      },
+      ...options,
+    });
+  }
+}
+```
+
+### **Repository Pattern**
+
+```typescript
+@Injectable()
+export class ChatRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async createChat(data: CreateChatDto, tenantId: string): Promise<Chat> {
+    return this.prisma.chat.create({
+      data: {
+        ...data,
+        projectTenantId: tenantId,
+      },
+      include: {
+        messages: true,
+        agent: true,
+      },
+    });
+  }
+
+  async findChatsByTenant(
+    tenantId: string,
+    filters?: ChatFilters,
+  ): Promise<Chat[]> {
+    return this.prisma.chat.findMany({
+      where: {
+        projectTenantId: tenantId,
+        ...filters,
+      },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+        },
+        agent: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+}
+```
+
+## 📊 **Query Optimization**
+
+### **Efficient Queries**
+
+```typescript
+// ✅ Good: Use select for specific fields
+const chat = await prisma.chat.findUnique({
+  where: { id },
+  select: {
+    id: true,
+    title: true,
+    status: true,
+    messages: {
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10, // Limit messages
+    },
+  },
+});
+
+// ✅ Good: Use pagination
+const chats = await prisma.chat.findMany({
+  where: { projectTenantId },
+  skip: (page - 1) * limit,
+  take: limit,
+  orderBy: { updatedAt: 'desc' },
+});
+
+// ❌ Bad: Fetching all data
+const chat = await prisma.chat.findUnique({
+  where: { id },
+  include: { messages: true }, // Could be thousands of messages
+});
+```
+
+### **Aggregation Queries**
+
+```typescript
+// Chat metrics aggregation
+const metrics = await prisma.chatMetric.aggregate({
+  where: {
+    agentAnswerId,
+    date: {
+      gte: startDate,
+      lte: endDate,
+    },
+  },
+  _avg: {
+    avgResponseTime: true,
+    avgResolutionTime: true,
+    avgRating: true,
+  },
+  _sum: {
+    totalChats: true,
+    completedChats: true,
+    missedChats: true,
+  },
+});
+```
+
+## 🔒 **Data Validation & Security**
+
+### **Input Validation**
+
+```typescript
+export class CreateChatDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 100)
+  title: string;
+
+  @IsEnum(ConversationStatus)
+  @IsOptional()
+  status?: ConversationStatus;
+
+  @IsMongoId()
+  projectTenantId: string;
+
+  @IsMongoId()
+  @IsOptional()
+  agentAnswerId?: string;
+}
+```
+
+### **Tenant Isolation**
+
+```typescript
+@Injectable()
+export class TenantGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const tenantId = request.headers['x-tenant-id'];
+
+    if (!tenantId) {
+      throw new UnauthorizedException('Tenant ID required');
+    }
+
+    // Verify tenant exists and user has access
+    const tenant = await this.prisma.projectTenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('Tenant not found');
+    }
+
+    request.tenantId = tenantId;
+    return true;
+  }
+}
+```
+
+## 📈 **Performance Best Practices**
+
+### **Indexing Strategy**
+
+```prisma
+model Chat {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectTenantId   String   @db.ObjectId
+  agentAnswerId     String?  @db.ObjectId
+  status            ConversationStatus
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Composite indexes for common queries
+  @@index([projectTenantId, status])
+  @@index([projectTenantId, createdAt])
+  @@index([agentAnswerId, status])
+}
+```
+
+### **Connection Pooling**
+
+```typescript
+// prisma/schema.prisma
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+  // Add connection pooling
+  // url = "mongodb://localhost:27017/chatengine?maxPoolSize=20&minPoolSize=5"
+}
+```
+
+## 🔄 **Migration & Seeding**
+
+### **Database Seeding**
+
+```typescript
+// prisma/seed.ts
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Create default project
+  const project = await prisma.project.create({
+    data: {
+      name: 'Default Project',
+      description: 'Default project for development',
+    },
+  });
+
+  // Create default tenant
+  const tenant = await prisma.projectTenant.create({
+    data: {
+      name_tenant: 'default-tenant',
+      projectId: project.id,
+    },
+  });
+
+  console.log('Database seeded successfully');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+```
+
+## 🧪 **Testing Database**
+
+### **Test Database Setup**
+
+```typescript
+describe('ChatRepository', () => {
+  let prisma: PrismaService;
+  let repository: ChatRepository;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ChatRepository,
+        {
+          provide: PrismaService,
+          useValue: {
+            chat: {
+              create: jest.fn(),
+              findMany: jest.fn(),
+              findUnique: jest.fn(),
+            },
+          },
+        },
+      ],
+    }).compile();
+
+    repository = module.get<ChatRepository>(ChatRepository);
+    prisma = module.get<PrismaService>(PrismaService);
+  });
+
+  it('should create chat with tenant isolation', async () => {
+    const dto = { title: 'Test Chat' };
+    const tenantId = 'tenant-id';
+    const expected = { id: 'chat-id', ...dto, projectTenantId: tenantId };
+
+    jest.spyOn(prisma.chat, 'create').mockResolvedValue(expected);
+
+    const result = await repository.createChat(dto, tenantId);
+    expect(result).toEqual(expected);
+    expect(prisma.chat.create).toHaveBeenCalledWith({
+      data: { ...dto, projectTenantId: tenantId },
+      include: { messages: true, agent: true },
+    });
+  });
+});
+```
+
+## 🚨 **Error Handling**
+
+### **Database Error Handling**
+
+```typescript
+@Injectable()
+export class ChatService {
+  async createChat(dto: CreateChatDto, tenantId: string): Promise<Chat> {
+    try {
+      return await this.chatRepository.createChat(dto, tenantId);
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('Chat with this title already exists');
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Referenced record not found');
+      }
+      throw new InternalServerErrorException('Failed to create chat');
+    }
+  }
+}
+```

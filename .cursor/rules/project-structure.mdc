@@ -1,0 +1,73 @@
+---
+alwaysApply: true
+description: Project structure and architecture patterns for Chat Engine Turbo
+---
+
+# Chat Engine Turbo - Project Structure Guide
+
+## 🏗️ **Architecture Overview**
+
+This is a **NestJS + Prisma + MongoDB** chat engine service with multi-tenant architecture.
+
+### **Core Structure**
+
+- **Entry Point**: [src/main.ts](mdc:src/main.ts) - Application bootstrap
+- **Root Module**: [src/app.module.ts](mdc:src/app.module.ts) - Main application module
+- **Database Schema**: [prisma/schema.prisma](mdc:prisma/schema.prisma) - MongoDB schema with multi-tenant design
+- **Configuration**: [package.json](mdc:package.json) - Dependencies and scripts
+
+### **Key Features**
+
+- **Multi-tenant Architecture**: Project → ProjectTenant → Members/Agents
+- **Real-time Chat**: Conversation management with message types
+- **Agent System**: Human/Bot agents with canned responses
+- **Analytics**: Chat metrics and audit logging
+- **Channel Support**: Website, WhatsApp, Telegram, Facebook, Instagram
+
+## 🎯 **Development Patterns**
+
+### **Module Organization**
+
+```
+src/
+├── modules/           # Feature modules (auth, chat, agents, etc.)
+├── common/           # Shared utilities, guards, interceptors
+├── config/           # Configuration files
+├── database/         # Prisma service and migrations
+└── main.ts          # Application entry point
+```
+
+### **Naming Conventions**
+
+- **Controllers**: `*.controller.ts` (e.g., `chat.controller.ts`)
+- **Services**: `*.service.ts` (e.g., `chat.service.ts`)
+- **Modules**: `*.module.ts` (e.g., `chat.module.ts`)
+- **DTOs**: `*.dto.ts` (e.g., `create-chat.dto.ts`)
+- **Entities**: Use Prisma models from schema
+- **Guards**: `*.guard.ts` (e.g., `auth.guard.ts`)
+- **Interceptors**: `*.interceptor.ts` (e.g., `logging.interceptor.ts`)
+
+### **Database Patterns**
+
+- **Multi-tenant**: Always include `projectTenantId` in queries
+- **Soft Deletes**: Use `deletedAt` field instead of hard deletes
+- **Audit Trail**: Include `createdAt`, `updatedAt` in all models
+- **Indexes**: Add indexes for frequently queried fields
+
+## 🔧 **Best Practices**
+
+1. **Always use DTOs** for request/response validation
+2. **Implement proper error handling** with custom exceptions
+3. **Use dependency injection** for all services
+4. **Follow single responsibility** principle in modules
+5. **Implement proper logging** for debugging and monitoring
+6. **Use environment variables** for configuration
+7. **Write comprehensive tests** for all business logic
+
+## 📊 **Performance Considerations**
+
+- **Database Queries**: Use Prisma's `select` and `include` for optimization
+- **Caching**: Implement Redis for frequently accessed data
+- **Pagination**: Always paginate large result sets
+- **Connection Pooling**: Configure MongoDB connection pool
+- **Real-time**: Use WebSockets for live chat features

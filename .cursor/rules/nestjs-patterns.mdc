@@ -1,0 +1,266 @@
+---
+globs: *.ts,*.js
+description: NestJS development patterns and best practices
+---
+
+# NestJS Development Patterns
+
+## 🚀 **Core NestJS Patterns**
+
+### **Module Structure**
+
+```typescript
+@Module({
+  imports: [TypeOrmModule.forFeature([Entity])],
+  controllers: [Controller],
+  providers: [Service, Guard, Interceptor],
+  exports: [Service], // Export for other modules
+})
+export class FeatureModule {}
+```
+
+### **Service Pattern**
+
+```typescript
+@Injectable()
+export class ChatService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: Logger,
+  ) {}
+
+  async createChat(dto: CreateChatDto): Promise<Chat> {
+    try {
+      return await this.prisma.chat.create({
+        data: dto,
+        include: { messages: true },
+      });
+    } catch (error) {
+      this.logger.error('Failed to create chat', error);
+      throw new InternalServerErrorException('Chat creation failed');
+    }
+  }
+}
+```
+
+### **Controller Pattern**
+
+```typescript
+@Controller('chats')
+@UseGuards(AuthGuard)
+export class ChatController {
+  constructor(private readonly chatService: ChatService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() dto: CreateChatDto): Promise<Chat> {
+    return this.chatService.createChat(dto);
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<Chat> {
+    return this.chatService.findById(id);
+  }
+}
+```
+
+## 🔒 **Security & Validation**
+
+### **DTO Validation**
+
+```typescript
+export class CreateChatDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 100)
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsMongoId()
+  projectTenantId: string;
+}
+```
+
+### **Custom Guards**
+
+```typescript
+@Injectable()
+export class TenantGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    const tenantId = request.headers['x-tenant-id'];
+
+    if (!tenantId) {
+      throw new UnauthorizedException('Tenant ID required');
+    }
+
+    request.tenantId = tenantId;
+    return true;
+  }
+}
+```
+
+## 📊 **Error Handling**
+
+### **Custom Exceptions**
+
+```typescript
+export class ChatNotFoundException extends NotFoundException {
+  constructor(chatId: string) {
+    super(`Chat with ID ${chatId} not found`);
+  }
+}
+
+export class TenantAccessDeniedException extends ForbiddenException {
+  constructor() {
+    super('Access denied for this tenant');
+  }
+}
+```
+
+### **Global Exception Filter**
+
+```typescript
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const request = ctx.getRequest();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message:
+        exception instanceof HttpException
+          ? exception.message
+          : 'Internal server error',
+    });
+  }
+}
+```
+
+## 🔄 **Interceptors & Middleware**
+
+### **Logging Interceptor**
+
+```typescript
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const { method, url } = request;
+    const now = Date.now();
+
+    return next.handle().pipe(
+      tap(() => {
+        const response = context.switchToHttp().getResponse();
+        const { statusCode } = response;
+        const delay = Date.now() - now;
+
+        console.log(`${method} ${url} ${statusCode} - ${delay}ms`);
+      }),
+    );
+  }
+}
+```
+
+## 🧪 **Testing Patterns**
+
+### **Service Testing**
+
+```typescript
+describe('ChatService', () => {
+  let service: ChatService;
+  let prisma: PrismaService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ChatService,
+        {
+          provide: PrismaService,
+          useValue: {
+            chat: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+            },
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<ChatService>(ChatService);
+    prisma = module.get<PrismaService>(PrismaService);
+  });
+
+  it('should create a chat', async () => {
+    const dto = { title: 'Test Chat', projectTenantId: 'tenant-id' };
+    const expected = { id: 'chat-id', ...dto };
+
+    jest.spyOn(prisma.chat, 'create').mockResolvedValue(expected);
+
+    const result = await service.createChat(dto);
+    expect(result).toEqual(expected);
+  });
+});
+```
+
+## 🎯 **Performance Optimization**
+
+### **Caching with Redis**
+
+```typescript
+@Injectable()
+export class ChatService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
+
+  async findById(id: string): Promise<Chat> {
+    const cacheKey = `chat:${id}`;
+    const cached = await this.cacheManager.get<Chat>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const chat = await this.prisma.chat.findUnique({
+      where: { id },
+      include: { messages: true },
+    });
+
+    await this.cacheManager.set(cacheKey, chat, 300); // 5 minutes
+    return chat;
+  }
+}
+```
+
+## 🔧 **Configuration Management**
+
+### **Environment Configuration**
+
+```typescript
+@Injectable()
+export class ConfigService {
+  constructor(private configService: ConfigService) {}
+
+  get databaseUrl(): string {
+    return this.configService.get<string>('DATABASE_URL');
+  }
+
+  get jwtSecret(): string {
+    return this.configService.get<string>('JWT_SECRET');
+  }
+}
+```

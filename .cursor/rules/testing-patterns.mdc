@@ -1,0 +1,463 @@
+---
+globs: *.spec.ts,*.test.ts,test/**/*
+description: Testing patterns and best practices for NestJS applications
+---
+
+# Testing Patterns & Best Practices
+
+## 🧪 **Testing Strategy**
+
+### **Test Structure**
+
+```
+test/
+├── unit/           # Unit tests for services, controllers
+├── integration/    # Integration tests for modules
+├── e2e/           # End-to-end tests
+└── fixtures/      # Test data and mocks
+```
+
+### **Test Categories**
+
+- **Unit Tests**: Test individual functions/methods in isolation
+- **Integration Tests**: Test module interactions with database
+- **E2E Tests**: Test complete user workflows
+- **Contract Tests**: Test API contracts and DTOs
+
+## 🔧 **Unit Testing Patterns**
+
+### **Service Testing**
+
+```typescript
+describe('ChatService', () => {
+  let service: ChatService;
+  let prisma: PrismaService;
+  let logger: Logger;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ChatService,
+        {
+          provide: PrismaService,
+          useValue: {
+            chat: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+              findMany: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+            },
+          },
+        },
+        {
+          provide: Logger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<ChatService>(ChatService);
+    prisma = module.get<PrismaService>(PrismaService);
+    logger = module.get<Logger>(Logger);
+  });
+
+  describe('createChat', () => {
+    it('should create a chat successfully', async () => {
+      // Arrange
+      const dto: CreateChatDto = {
+        title: 'Test Chat',
+        projectTenantId: 'tenant-id',
+      };
+      const expected = { id: 'chat-id', ...dto, createdAt: new Date() };
+      jest.spyOn(prisma.chat, 'create').mockResolvedValue(expected);
+
+      // Act
+      const result = await service.createChat(dto, 'tenant-id');
+
+      // Assert
+      expect(result).toEqual(expected);
+      expect(prisma.chat.create).toHaveBeenCalledWith({
+        data: { ...dto, projectTenantId: 'tenant-id' },
+        include: { messages: true, agent: true },
+      });
+    });
+
+    it('should throw NotFoundException when tenant not found', async () => {
+      // Arrange
+      const dto: CreateChatDto = {
+        title: 'Test Chat',
+        projectTenantId: 'invalid-tenant',
+      };
+      jest.spyOn(prisma.projectTenant, 'findUnique').mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(service.createChat(dto, 'invalid-tenant')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+});
+```
+
+### **Controller Testing**
+
+```typescript
+describe('ChatController', () => {
+  let controller: ChatController;
+  let service: ChatService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [ChatController],
+      providers: [
+        {
+          provide: ChatService,
+          useValue: {
+            createChat: jest.fn(),
+            findById: jest.fn(),
+            findByTenant: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    controller = module.get<ChatController>(ChatController);
+    service = module.get<ChatService>(ChatService);
+  });
+
+  describe('POST /chats', () => {
+    it('should create a chat', async () => {
+      // Arrange
+      const dto: CreateChatDto = {
+        title: 'Test Chat',
+        projectTenantId: 'tenant-id',
+      };
+      const expected = { id: 'chat-id', ...dto };
+      jest.spyOn(service, 'createChat').mockResolvedValue(expected);
+
+      // Act
+      const result = await controller.create(dto);
+
+      // Assert
+      expect(result).toEqual(expected);
+      expect(service.createChat).toHaveBeenCalledWith(dto, undefined);
+    });
+  });
+});
+```
+
+## 🔗 **Integration Testing**
+
+### **Database Integration Tests**
+
+```typescript
+describe('ChatRepository Integration', () => {
+  let prisma: PrismaService;
+  let repository: ChatRepository;
+
+  beforeAll(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [PrismaService, ChatRepository],
+    }).compile();
+
+    prisma = module.get<PrismaService>(PrismaService);
+    repository = module.get<ChatRepository>(ChatRepository);
+  });
+
+  beforeEach(async () => {
+    // Clean database before each test
+    await prisma.chat.deleteMany();
+    await prisma.projectTenant.deleteMany();
+    await prisma.project.deleteMany();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('should create and retrieve chat', async () => {
+    // Arrange
+    const project = await prisma.project.create({
+      data: { name: 'Test Project' },
+    });
+    const tenant = await prisma.projectTenant.create({
+      data: {
+        name_tenant: 'test-tenant',
+        projectId: project.id,
+      },
+    });
+
+    // Act
+    const chat = await repository.createChat({ title: 'Test Chat' }, tenant.id);
+
+    // Assert
+    expect(chat).toBeDefined();
+    expect(chat.title).toBe('Test Chat');
+    expect(chat.projectTenantId).toBe(tenant.id);
+
+    const retrieved = await repository.findById(chat.id);
+    expect(retrieved).toEqual(chat);
+  });
+});
+```
+
+## 🌐 **E2E Testing**
+
+### **API E2E Tests**
+
+```typescript
+describe('Chat API (e2e)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    prisma = moduleFixture.get<PrismaService>(PrismaService);
+
+    await app.init();
+  });
+
+  beforeEach(async () => {
+    // Clean database
+    await prisma.chat.deleteMany();
+    await prisma.projectTenant.deleteMany();
+    await prisma.project.deleteMany();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('/chats (POST)', () => {
+    it('should create a chat', async () => {
+      // Arrange
+      const project = await prisma.project.create({
+        data: { name: 'Test Project' },
+      });
+      const tenant = await prisma.projectTenant.create({
+        data: {
+          name_tenant: 'test-tenant',
+          projectId: project.id,
+        },
+      });
+
+      const createChatDto = {
+        title: 'E2E Test Chat',
+        projectTenantId: tenant.id,
+      };
+
+      // Act
+      const response = await request(app.getHttpServer())
+        .post('/chats')
+        .set('x-tenant-id', tenant.id)
+        .send(createChatDto)
+        .expect(201);
+
+      // Assert
+      expect(response.body).toMatchObject({
+        title: 'E2E Test Chat',
+        projectTenantId: tenant.id,
+      });
+      expect(response.body.id).toBeDefined();
+    });
+
+    it('should return 400 for invalid data', async () => {
+      // Act & Assert
+      await request(app.getHttpServer())
+        .post('/chats')
+        .send({ title: '' }) // Invalid: empty title
+        .expect(400);
+    });
+  });
+});
+```
+
+## 🎭 **Mocking Patterns**
+
+### **Prisma Mock Factory**
+
+```typescript
+export class PrismaMockFactory {
+  static create(): DeepMockProxy<PrismaService> {
+    return mockDeep<PrismaService>({
+      chat: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      projectTenant: {
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+      },
+      $transaction: jest.fn(),
+    });
+  }
+}
+
+// Usage in tests
+const prismaMock = PrismaMockFactory.create();
+```
+
+### **Test Data Factories**
+
+```typescript
+export class ChatTestFactory {
+  static create(overrides: Partial<Chat> = {}): Chat {
+    return {
+      id: 'test-chat-id',
+      title: 'Test Chat',
+      description: 'Test Description',
+      status: 'OPEN',
+      projectTenantId: 'test-tenant-id',
+      createdAt: new Date('2023-01-01'),
+      updatedAt: new Date('2023-01-01'),
+      ...overrides,
+    };
+  }
+
+  static createMany(count: number, overrides: Partial<Chat> = {}): Chat[] {
+    return Array.from({ length: count }, (_, index) =>
+      this.create({
+        id: `test-chat-${index}`,
+        title: `Test Chat ${index}`,
+        ...overrides,
+      }),
+    );
+  }
+}
+```
+
+## 📊 **Test Coverage & Quality**
+
+### **Coverage Configuration**
+
+```typescript
+// jest.config.js
+module.exports = {
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.dto.ts',
+    '!src/**/*.interface.ts',
+    '!src/main.ts',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};
+```
+
+### **Test Utilities**
+
+```typescript
+export class TestUtils {
+  static async waitFor(
+    condition: () => boolean,
+    timeout = 5000,
+  ): Promise<void> {
+    const start = Date.now();
+    while (!condition() && Date.now() - start < timeout) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (!condition()) {
+      throw new Error('Condition not met within timeout');
+    }
+  }
+
+  static createMockRequest(overrides: any = {}): any {
+    return {
+      headers: {},
+      body: {},
+      params: {},
+      query: {},
+      user: {},
+      ...overrides,
+    };
+  }
+}
+```
+
+## 🚀 **Performance Testing**
+
+### **Load Testing**
+
+```typescript
+describe('Chat Performance', () => {
+  it('should handle concurrent chat creation', async () => {
+    const concurrentRequests = 100;
+    const promises = Array.from({ length: concurrentRequests }, (_, i) =>
+      request(app.getHttpServer())
+        .post('/chats')
+        .send({
+          title: `Concurrent Chat ${i}`,
+          projectTenantId: 'test-tenant',
+        }),
+    );
+
+    const start = Date.now();
+    const responses = await Promise.all(promises);
+    const duration = Date.now() - start;
+
+    expect(responses.every((r) => r.status === 201)).toBe(true);
+    expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
+  });
+});
+```
+
+## 🔧 **Test Configuration**
+
+### **Jest Configuration**
+
+```typescript
+// jest.config.js
+module.exports = {
+  moduleFileExtensions: ['js', 'json', 'ts'],
+  rootDir: 'src',
+  testRegex: '.*\\.spec\\.ts$',
+  transform: {
+    '^.+\\.(t|j)s$': 'ts-jest',
+  },
+  collectCoverageFrom: ['**/*.(t|j)s', '!**/*.dto.ts', '!**/*.interface.ts'],
+  coverageDirectory: '../coverage',
+  testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/$1',
+  },
+};
+```
+
+### **Test Setup**
+
+```typescript
+// test/setup.ts
+import { Test } from '@nestjs/testing';
+import { PrismaService } from '../src/database/prisma.service';
+
+beforeAll(async () => {
+  // Global test setup
+});
+
+afterAll(async () => {
+  // Global test cleanup
+});
+
+beforeEach(async () => {
+  // Test-specific setup
+});
+```

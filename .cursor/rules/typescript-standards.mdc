@@ -1,0 +1,372 @@
+---
+globs: *.ts,*.tsx
+description: TypeScript coding standards and best practices
+---
+
+# TypeScript Coding Standards
+
+## 🎯 **Type Safety & Best Practices**
+
+### **Strict Type Definitions**
+
+```typescript
+// ✅ Good: Explicit types
+interface CreateChatRequest {
+  title: string;
+  description?: string;
+  projectTenantId: string;
+  agentAnswerId?: string;
+}
+
+// ✅ Good: Use enums from Prisma schema
+type ConversationStatus = 'QUEUED' | 'OPEN' | 'PENDING' | 'ENDED' | 'ARCHIVED';
+type MemberRole = 'AGENT' | 'SUPERVISOR' | 'ADMIN' | 'AUDIT';
+
+// ❌ Bad: Any types
+function processData(data: any): any {
+  return data;
+}
+```
+
+### **Generic Types**
+
+```typescript
+// ✅ Good: Generic repository pattern
+interface BaseRepository<T> {
+  findById(id: string): Promise<T | null>;
+  create(data: Partial<T>): Promise<T>;
+  update(id: string, data: Partial<T>): Promise<T>;
+  delete(id: string): Promise<void>;
+}
+
+class ChatRepository implements BaseRepository<Chat> {
+  async findById(id: string): Promise<Chat | null> {
+    return this.prisma.chat.findUnique({ where: { id } });
+  }
+}
+```
+
+## 🔧 **Interface & Type Definitions**
+
+### **DTO Interfaces**
+
+```typescript
+// Request DTOs
+export interface CreateChatDto {
+  title: string;
+  description?: string;
+  projectTenantId: string;
+  agentAnswerId?: string;
+}
+
+export interface UpdateChatDto {
+  title?: string;
+  description?: string;
+  status?: ConversationStatus;
+}
+
+// Response DTOs
+export interface ChatResponseDto {
+  id: string;
+  title: string;
+  description?: string;
+  status: ConversationStatus;
+  projectTenantId: string;
+  agentAnswerId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  messages?: MessageResponseDto[];
+}
+
+// Query DTOs
+export interface ChatQueryDto {
+  page?: number;
+  limit?: number;
+  status?: ConversationStatus;
+  agentAnswerId?: string;
+  search?: string;
+}
+```
+
+### **Service Interfaces**
+
+```typescript
+export interface IChatService {
+  createChat(dto: CreateChatDto, tenantId: string): Promise<ChatResponseDto>;
+  findChatById(id: string, tenantId: string): Promise<ChatResponseDto>;
+  findChatsByTenant(
+    tenantId: string,
+    query: ChatQueryDto,
+  ): Promise<ChatResponseDto[]>;
+  updateChat(
+    id: string,
+    dto: UpdateChatDto,
+    tenantId: string,
+  ): Promise<ChatResponseDto>;
+  deleteChat(id: string, tenantId: string): Promise<void>;
+}
+```
+
+## 🚀 **Async/Await Patterns**
+
+### **Error Handling**
+
+```typescript
+// ✅ Good: Proper error handling
+async function createChat(
+  dto: CreateChatDto,
+  tenantId: string,
+): Promise<ChatResponseDto> {
+  try {
+    const chat = await this.prisma.chat.create({
+      data: { ...dto, projectTenantId: tenantId },
+      include: { messages: true },
+    });
+
+    return this.mapToResponseDto(chat);
+  } catch (error) {
+    this.logger.error('Failed to create chat', error);
+    throw new InternalServerErrorException('Chat creation failed');
+  }
+}
+
+// ✅ Good: Parallel operations
+async function getChatWithMetrics(chatId: string): Promise<ChatWithMetrics> {
+  const [chat, metrics] = await Promise.all([
+    this.chatRepository.findById(chatId),
+    this.metricsRepository.findByChatId(chatId),
+  ]);
+
+  if (!chat) {
+    throw new NotFoundException('Chat not found');
+  }
+
+  return { ...chat, metrics };
+}
+```
+
+### **Promise Patterns**
+
+```typescript
+// ✅ Good: Promise.all for parallel operations
+async function processMultipleChats(chatIds: string[]): Promise<Chat[]> {
+  const chats = await Promise.all(
+    chatIds.map((id) => this.chatRepository.findById(id)),
+  );
+
+  return chats.filter((chat) => chat !== null);
+}
+
+// ✅ Good: Promise.allSettled for independent operations
+async function updateMultipleChats(
+  updates: ChatUpdate[],
+): Promise<UpdateResult[]> {
+  const results = await Promise.allSettled(
+    updates.map((update) => this.updateChat(update.id, update.data)),
+  );
+
+  return results.map((result, index) => ({
+    id: updates[index].id,
+    success: result.status === 'fulfilled',
+    error: result.status === 'rejected' ? result.reason : null,
+  }));
+}
+```
+
+## 🎨 **Code Organization**
+
+### **File Structure**
+
+```typescript
+// chat.service.ts
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../database/prisma.service';
+import { CreateChatDto, UpdateChatDto, ChatResponseDto } from './dto';
+import { IChatService } from './interfaces';
+
+@Injectable()
+export class ChatService implements IChatService {
+  private readonly logger = new Logger(ChatService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  // Implementation methods...
+}
+```
+
+### **Import Organization**
+
+```typescript
+// 1. Node modules
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@prisma/client';
+
+// 2. Internal modules (absolute paths)
+import { CreateChatDto } from './dto/create-chat.dto';
+import { ChatRepository } from './repositories/chat.repository';
+
+// 3. Relative imports
+import { ChatMapper } from './mappers/chat.mapper';
+```
+
+## 🔍 **Type Guards & Validation**
+
+### **Type Guards**
+
+```typescript
+// Type guard functions
+export function isCreateChatDto(obj: any): obj is CreateChatDto {
+  return (
+    typeof obj === 'object' &&
+    typeof obj.title === 'string' &&
+    typeof obj.projectTenantId === 'string' &&
+    (obj.description === undefined || typeof obj.description === 'string')
+  );
+}
+
+// Runtime validation
+export function validateCreateChatDto(dto: any): CreateChatDto {
+  if (!isCreateChatDto(dto)) {
+    throw new BadRequestException('Invalid chat data');
+  }
+  return dto;
+}
+```
+
+### **Utility Types**
+
+```typescript
+// Utility types for common patterns
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
+// Usage examples
+type CreateChatRequest = Optional<Chat, 'id' | 'createdAt' | 'updatedAt'>;
+type UpdateChatRequest = Partial<
+  Pick<Chat, 'title' | 'description' | 'status'>
+>;
+```
+
+## 🧪 **Testing Types**
+
+### **Test Utilities**
+
+```typescript
+// Test data factories
+export class ChatTestFactory {
+  static create(overrides: Partial<Chat> = {}): Chat {
+    return {
+      id: 'test-chat-id',
+      title: 'Test Chat',
+      description: 'Test Description',
+      status: 'OPEN',
+      projectTenantId: 'test-tenant-id',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+  }
+
+  static createDto(overrides: Partial<CreateChatDto> = {}): CreateChatDto {
+    return {
+      title: 'Test Chat',
+      projectTenantId: 'test-tenant-id',
+      ...overrides,
+    };
+  }
+}
+
+// Mock types
+export type MockPrismaService = {
+  [K in keyof PrismaService]: jest.MockedFunction<PrismaService[K]>;
+};
+```
+
+## 📊 **Performance Types**
+
+### **Optimized Types**
+
+```typescript
+// Lazy loading types
+export type LazyChat = Chat & {
+  messages?: Promise<Message[]>;
+  agent?: Promise<AgentAnswer>;
+};
+
+// Pagination types
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// Cache types
+export interface CacheOptions {
+  ttl?: number;
+  key?: string;
+  tags?: string[];
+}
+```
+
+## 🚨 **Error Types**
+
+### **Custom Error Classes**
+
+```typescript
+export class ChatError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly statusCode: number = 500,
+  ) {
+    super(message);
+    this.name = 'ChatError';
+  }
+}
+
+export class ChatNotFoundError extends ChatError {
+  constructor(chatId: string) {
+    super(`Chat with ID ${chatId} not found`, 'CHAT_NOT_FOUND', 404);
+  }
+}
+
+export class TenantAccessDeniedError extends ChatError {
+  constructor() {
+    super('Access denied for this tenant', 'TENANT_ACCESS_DENIED', 403);
+  }
+}
+```
+
+## 🔧 **Configuration Types**
+
+### **Environment Configuration**
+
+```typescript
+export interface DatabaseConfig {
+  url: string;
+  maxConnections: number;
+  connectionTimeout: number;
+}
+
+export interface RedisConfig {
+  host: string;
+  port: number;
+  password?: string;
+  db: number;
+}
+
+export interface AppConfig {
+  port: number;
+  environment: 'development' | 'production' | 'test';
+  database: DatabaseConfig;
+  redis: RedisConfig;
+  jwt: {
+    secret: string;
+    expiresIn: string;
+  };
+}
+```
