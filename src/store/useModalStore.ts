@@ -8,6 +8,7 @@ export type ModalType =
    | "addAgent"
    | "selectAgent"
    | "profile"
+   | "fetchAgentCanned"
    | "unsavedChanges"; // Add other modal types here
 
 interface ModalData {

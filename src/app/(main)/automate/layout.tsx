@@ -5,7 +5,7 @@ import { NavItemPage } from "@/types/user.type";
 export const automateNavItem: NavItemPage[] = [
    {
       title: "Response List",
-      href: "/automate/Canned",
+      href: "/automate/canned",
       prem: ["*"],
    },
 ];

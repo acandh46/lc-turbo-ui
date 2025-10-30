@@ -50,7 +50,7 @@ const SubmenuItem = ({
             variant={isActive ? "secondary" : "ghost"}
             onClick={handleClick}
             className={cn(
-               "w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium",
+               "w-full flex items-center justify-between cursor-pointer px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium",
                "border-none shadow-none",
                isActive
                   ? "bg-white text-black font-semibold"
@@ -132,7 +132,7 @@ export default function PageLayoutWrapper({
          {filteredNavItems.length > 0 && (
             <div
                className={cn(
-                  "flex-shrink-0 flex flex-col  overflow-hidden  dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 ease-in-out overflow-y-auto",
+                  "shrink-0 flex flex-col  overflow-hidden  dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 ease-in-out overflow-y-auto",
                   isSubMenuOpen ? "w-64 p-4" : "w-0 p-0"
                )}
             >

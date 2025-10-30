@@ -134,7 +134,7 @@ export default function UserPage() {
    return (
       <div className="flex flex-1 flex-col bg-slate-50 rounded-2xl overflow-hidden">
          <HeaderContent title="Users" />
-         <div className="flex-col p-3">
+         <div className="flex-col p-5">
             <div className="flex flex-row mb-2 justify-between">
                <Button
                   className="cursor-pointer"
@@ -145,7 +145,7 @@ export default function UserPage() {
                      })
                   }
                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <PlusCircle className="mr-1 h-4 w-4" />
                   Add Member
                </Button>
             </div>

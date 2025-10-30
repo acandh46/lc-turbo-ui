@@ -84,7 +84,6 @@ export const agentApi = {
       agentId: string,
       data: any
    ): Promise<AgentConfigResponse> => {
-      console.log(data);
       let payload = {
          agentName: data.agentName,
          ...data.agentConfig,
@@ -92,6 +91,17 @@ export const agentApi = {
       const response = await api.post(`/agent/config/${agentId}`, payload);
       return response.data;
    },
+
+   getCanned: async (agentId: string) => {
+      const response = await api.get(`/agent/canned/${agentId}`);
+      return response.data;
+   },
+
+   changeCanned: async (
+      data: any,
+      cannedId?: string,
+      isUpdate: boolean = false
+   ) => {},
 };
 
 export const userApi = {
