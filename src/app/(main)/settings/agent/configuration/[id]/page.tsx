@@ -142,7 +142,7 @@ export default function AgentsConfigurationPage() {
             </div>
             <div className="flex flex-col flex-1 min-h-0">
                <HeaderContent title="Preview" showToggleMenu={false} />
-               <div className="flex flex-col flex-1  relative items-center min-h-[80%] gap-0">
+               <div className="flex flex-col flex-1  relative items-center min-h-[80%] gap-0 bg-gray-200">
                   <AgentChatPreview />
                   {/* <AgentPreview /> */}
                   <p>coke</p>

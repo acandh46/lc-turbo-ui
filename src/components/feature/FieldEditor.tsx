@@ -58,15 +58,24 @@ export const FieldEditor = ({ field }: FieldEditorProps) => {
                      }}
                   />
                ) : (
-                  <Input
-                     id={`label-${field.id}`}
-                     value={localLabel}
-                     onChange={(e) => {
-                        setLocalLabel(e.target.value);
-                        handleFieldChange("label", e.target.value);
+                  <MarkdownEditor
+                     
+                     content={localLabel}
+                     variant="short"
+                     onChange={(newContent) => {
+                        setLocalLabel(newContent);
+                        handleFieldChange("label", newContent);
                      }}
-                     className="h-8 border focus:border-0 focus-visible:ring-blue-300 focus:border-blue-300 ring-blue-300 "
                   />
+                  // <Input
+                  //    id={`label-${field.id}`}
+                  //    value={localLabel}
+                  //    onChange={(e) => {
+                  //       setLocalLabel(e.target.value);
+                  //       handleFieldChange("label", e.target.value);
+                  //    }}
+                  //    className="h-8 border focus:border-0 focus-visible:ring-blue-300 focus:border-blue-300 ring-blue-300 "
+                  // />
                )}
             </div>
             {!isHeader && (

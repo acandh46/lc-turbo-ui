@@ -1,7 +1,7 @@
 "use client";
 import { useAgentConfigStore } from "@/store/useAgentConfigStore";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatButtonBubble } from "./widget/ChatBubble";
 import { BannerDraggable } from "./widget/BannerDraggable";
 import { ChatWindow } from "./widget/ChatWindow";
@@ -15,6 +15,22 @@ export const AgentChatPreview = () => {
       x: config?.agentConfig.bannerPostionX || 0,
       y: config?.agentConfig.bannerPostionY || 0,
    });
+
+   useEffect(() => {
+      setIsOpen(true);
+   }, [activeTab]);
+
+   useEffect(() => {
+      if (config?.agentConfig?.theme && config?.agentConfig.themeColor) {
+         setIsOpen(true);
+      }
+   }, [config?.agentConfig.theme, config?.agentConfig.themeColor]);
+
+   useEffect(() => {
+      if (config?.agentConfig?.widgetType) {
+         setIsOpen(false);
+      }
+   }, [config?.agentConfig?.widgetType]);
 
    if (!config) {
       return (
@@ -38,7 +54,7 @@ export const AgentChatPreview = () => {
    return (
       <div
          ref={dragContainerRef}
-         className="relative h-[720px] w-full justify-end flex ml-auto overflow-hidden p-1 bg-blue-400"
+         className="relative h-[720px] w-full justify-end flex ml-auto overflow-hidden p-1 bg-gray-200 "
       >
          {isOpen && (
             <AnimatePresence>

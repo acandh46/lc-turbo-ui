@@ -10,11 +10,13 @@ interface PreChatFormBubbleProps {
    preChatFormField: AgentPreChatFormFieldType[];
    actionButton: () => void;
    bubbleStyle: React.CSSProperties;
+   themeColor: string;
 }
 export const PreChatFormBubble = ({
    preChatFormField,
    actionButton,
    bubbleStyle,
+   themeColor,
 }: PreChatFormBubbleProps) => {
    const sortedFields = React.useMemo(
       () =>
@@ -46,11 +48,11 @@ export const PreChatFormBubble = ({
          <div key={field.id} className="space-y-1 w-full">
             <Label
                htmlFor={field.id}
-               className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate gap-2"
+               className="text-sm font-normal text-gray-600 dark:text-gray-400 truncate gap-2"
                style={{ maxWidth: "100%" }}
             >
                <span className="inline-block max-w-full truncate align-bottom">
-                  {field.label} :
+                  <RenderHtml content={field.label} />
                </span>
                {field.required && <span className="text-red-500 ">*</span>}
             </Label>
@@ -60,21 +62,35 @@ export const PreChatFormBubble = ({
                   type={field.type}
                   placeholder={field.placeholder || ""}
                   required={field.required}
-                  className="bg-white h-8 text-sm dark:bg-gray-600 w-full"
-                  style={{ maxWidth: "100%" }}
+                  // className="bg-white h-8 text-sm dark:bg-gray-600 w-full focus:outline-none focus:border-0 focus:ring-1 shadow-xs "
+                  className="bg-white h-10 border border-input  px-3  focus:border-blue-300 ring-blue-300 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  style={
+                     {
+                        maxWidth: "100%",
+                        "--tw-ring-color": themeColor,
+                     } as React.CSSProperties
+                  }
                />
             )}
 
             {field.type == "RADIO" && (
                <RadioGroup className="mt-3">
                   {field.options.map((item: any, idx: number) => (
-                     <div key={idx} className="flex items-center gap-3">
+                     <div key={idx} className="flex items-center gap-2">
                         <RadioGroupItem
                            value={item}
-                           id="r1"
-                           className=" border-black border-2"
+                           id={`radio-${field.id}-${idx}`}
+                           className="border-gray-300 border-2 data-[state=checked]:border-[--theme-color]"
+                           style={
+                              {
+                                 "--theme-color": bubbleStyle.backgroundColor,
+                              } as React.CSSProperties
+                           }
                         />
-                        <Label htmlFor="r1" className="text-xs text-gray-800">
+                        <Label
+                           htmlFor={`radio-${field.id}-${idx}`}
+                           className="text-sm text-gray-800"
+                        >
                            {item}
                         </Label>
                      </div>
@@ -86,8 +102,13 @@ export const PreChatFormBubble = ({
                <select
                   id={field.id}
                   required={field.required}
-                  className="bg-white h-8 text-sm dark:bg-gray-600 w-full border rounded px-2 focus:outline-none focus:ring-2 focus:ring-blue-300 mt-2"
-                  style={{ maxWidth: "100%" }}
+                  className="bg-white h-10 text-sm dark:bg-gray-600 w-full border border-gray-300 rounded px-2 focus:outline-none focus:ring-2 focus:ring-[--theme-color] focus:border-[--theme-color] mt-2"
+                  style={
+                     {
+                        maxWidth: "100%",
+                        "--theme-color": bubbleStyle.backgroundColor,
+                     } as React.CSSProperties
+                  }
                   defaultValue=""
                >
                   <option value="" disabled>
@@ -105,14 +126,14 @@ export const PreChatFormBubble = ({
    }, []);
 
    return (
-      <div className="relative flex flex-col w-full max-w-xs p-4 bg-gray-100 rounded-t-xl rounded-br-xl space-y-3 dark:bg-gray-700 box-border overflow-hidden">
+      <div className="relative flex flex-col w-full max-w-xs p-4 bg-white rounded-t-xl rounded-br-xl space-y-3 dark:bg-gray-700 box-border overflow-hidden">
          <div className="flex flex-col gap-3 w-full">
             {sortedFields.map(renderField)}
          </div>
          <Button
             onClick={actionButton}
             style={bubbleStyle}
-            className="w-full h-9 text-white mt-2"
+            className="w-full h-9 text-white mt-2 cursor-pointer"
          >
             Mulai Obrolan
          </Button>

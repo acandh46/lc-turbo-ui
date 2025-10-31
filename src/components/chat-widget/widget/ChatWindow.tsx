@@ -29,7 +29,7 @@ export const ChatWindow = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className={`flex flex-col w-85 h-160 bg-gray-200/50 rounded-xl shadow-xl overflow-hidden border border-gray-200/50 dark:bg-black dark:border-gray-700/50 ${
+            className={`flex flex-col w-85 h-160 bg-gray-200/50 rounded-xl shadow-2xl overflow-hidden border border-gray-200/50 dark:bg-black dark:border-gray-700/50 ${
                agentConfig.theme === "dark" ? "dark" : ""
             }`}
          >

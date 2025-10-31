@@ -3,9 +3,10 @@
 import { AgentConfigType } from "@/types/agent.types";
 import { AvatarWidget } from "../AvatarWidget";
 import { PreChatFormBubble } from "../PreChatFormBubble";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { WelcomeMessageCardPreview } from "../WelcomeMessageCardPreview";
 import { RenderHtml } from "../RenderHtml";
+import { AwayMessageBanner } from "./AwayMessageBanner";
 
 interface ChatBodyProps {
    activeTab: string;
@@ -22,6 +23,7 @@ export function ChatBody({
    isPreChatSubmitted,
    setIsPreChatSubmitted,
 }: ChatBodyProps) {
+   const [showNotice, setShowNotice] = useState(false);
    const sortedFields = useMemo(
       () =>
          Array.isArray(agentConfig.preChatFormField)
@@ -33,7 +35,10 @@ export function ChatBody({
    );
 
    return (
-      <div className="grow p-4 overflow-y-auto space-y-4 dark:bg-black">
+      <div className="relative grow p-4 overflow-y-auto space-y-4 dark:bg-black">
+         {showNotice && (
+            <AwayMessageBanner message="We are currently away and will be back soon." />
+         )}
          {activeTab === "welcome" && (
             <div className="flex items-start gap-2.5">
                <AvatarWidget
@@ -94,6 +99,7 @@ export function ChatBody({
                      agentName={agentName}
                   />
                   <PreChatFormBubble
+                     themeColor={agentConfig.themeColor}
                      preChatFormField={sortedFields}
                      bubbleStyle={{ backgroundColor: agentConfig.themeColor }}
                      actionButton={() => setIsPreChatSubmitted(true)}

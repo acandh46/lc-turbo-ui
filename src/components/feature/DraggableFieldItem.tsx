@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AgentPreChatFormFieldType } from "@/types/agent.types";
+import { RenderHtml } from "./RenderHtml";
 
 interface DraggableFieldItemProps {
    field: AgentPreChatFormFieldType;
@@ -79,7 +80,11 @@ export const DraggableFieldItem = ({
                   )}
                </button>
                <p className="font-medium text-gray-800">
-                  {field.type === "HEADER" ? "Information" : staticLabel}
+                  {field.type === "HEADER" ? (
+                     "Information"
+                  ) : (
+                     <RenderHtml content={staticLabel} className="text-sm" />
+                  )}
                </p>
             </div>
             <div className="flex items-center gap-6 ml-auto">
