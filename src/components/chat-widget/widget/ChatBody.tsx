@@ -5,8 +5,9 @@ import { AvatarWidget } from "../AvatarWidget";
 import { PreChatFormBubble } from "../PreChatFormBubble";
 import { useMemo, useState } from "react";
 import { WelcomeMessageCardPreview } from "../WelcomeMessageCardPreview";
-import { RenderHtml } from "../RenderHtml";
+
 import { AwayMessageBanner } from "./AwayMessageBanner";
+import { RenderHtml } from "@/components/feature/RenderHtml";
 
 interface ChatBodyProps {
    activeTab: string;

@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Button } from "../ui/button";
-import { RenderHtml } from "./RenderHtml";
+import { RenderHtml } from "../feature/RenderHtml";
 
 interface PreChatFormBubbleProps {
    preChatFormField: AgentPreChatFormFieldType[];

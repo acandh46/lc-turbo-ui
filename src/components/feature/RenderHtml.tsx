@@ -23,7 +23,7 @@ export const RenderHtml = ({ content, className, style }: RenderHTMLProps) => {
    return (
       <div
          className={className}
-         style={style}
+         {...(style !== undefined ? { style } : {})}
          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
    );

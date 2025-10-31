@@ -1,7 +1,7 @@
 "use client";
 import { WelcomeMessageCard } from "@/types/agent.types";
 import Image from "next/image";
-import { RenderHtml } from "./RenderHtml";
+import { RenderHtml } from "../feature/RenderHtml";
 
 interface WelcomeMessageCardPreviewProps {
    card: WelcomeMessageCard;
