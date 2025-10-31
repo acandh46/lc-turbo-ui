@@ -13,14 +13,14 @@ export const WelcomeMessageCardPreview = ({
    buttonColor = "#000",
 }: WelcomeMessageCardPreviewProps) => {
    return (
-      <div className="bg-white dark:bg-slate-800 rounded-lg overflow-hidden w-full max-w-[250px]">
+      <div className="bg-white dark:bg-slate-800 flex-col rounded-lg overflow-hidden w-full max-w-[250px]">
          {card.showImage && card.imageUrl && (
-            <div className="relative w-full h-40">
+            <div className="w-full h-40 relative">
                <Image
                   src={card.imageUrl}
                   alt="Welcome image"
                   layout="fill"
-                  objectFit="contain"
+                  objectFit="cover"
                   unoptimized
                />
             </div>

@@ -73,7 +73,7 @@ export default function AgentsConfigurationPage() {
       setIsSaving(true);
       try {
          const response = await agentApi.saveConfig(agentId, config);
-         
+
          // Assuming you have an update API endpoint
          // const response = await agentApi.updateConfigAgent(agentId, config);
          // For demonstration, we'll simulate a successful save
@@ -142,7 +142,7 @@ export default function AgentsConfigurationPage() {
             </div>
             <div className="flex flex-col flex-1 min-h-0">
                <HeaderContent title="Preview" showToggleMenu={false} />
-               <div className="flex flex-col relative items-center min-h-[80%] gap-0">
+               <div className="flex flex-col flex-1  relative items-center min-h-[80%] gap-0">
                   <AgentChatPreview />
                   {/* <AgentPreview /> */}
                   <p>coke</p>
