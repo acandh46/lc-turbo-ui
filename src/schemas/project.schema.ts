@@ -23,3 +23,13 @@ export const AddAgentSchema = z.object({
 });
 
 export type AddAgentSchemaType = z.infer<typeof AddAgentSchema>;
+
+export const AddCannedSchema = z.object({
+   id: z.string().optional(),
+   agentId: z.string().min(1, "No Selected Agent"),
+   shortcut: z.string().min(1, "Shortcut is Required"),
+   content: z.string().min(1, "Content is Required"),
+   actived: z.boolean().optional(),
+});
+
+export type AddCannedSchemaType = z.infer<typeof AddCannedSchema>;

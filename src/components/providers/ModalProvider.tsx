@@ -7,6 +7,7 @@ import { AddProjectModal } from "../feature/settings/project/AddProjectModal";
 import AddMemberModal from "../feature/settings/users/AddMemberModal";
 import AddTenantModal from "../feature/settings/project/AddTenantModal";
 import { AddAgentModal } from "../feature/settings/agents/AddAgentModal";
+import { ModalCannedResponse } from "../canned-response/ModalCannedResponse";
 
 export const ModalProvider = () => {
    const [isMounted, setIsMounted] = useState(false);
@@ -26,6 +27,7 @@ export const ModalProvider = () => {
          <AddAgentModal />
          <UnsavedChangesModal />
          <SelectAgentModal />
+         <ModalCannedResponse />
       </>
    );
 };

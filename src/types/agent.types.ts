@@ -13,6 +13,15 @@ export interface AgentItem {
    actived: boolean;
 }
 
+export interface AgentCannedResponse {
+   id: string;
+   shortcut: string;
+   content: string;
+   actived: boolean;
+   createdAt: string;
+   createdBy: string;
+}
+
 export interface AgentConfigResponse {
    status: boolean;
    msg: string;
@@ -88,7 +97,9 @@ export interface AgentPreChatFormFieldType {
 export interface CannedResponseType {
    id: string;
    actived: boolean;
-   hashcod: string;
+   // hashcod: string;
    shortcut: string;
    content: string;
+   createdBy: string;
+   createdAt: string;
 }

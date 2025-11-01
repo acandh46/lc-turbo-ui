@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
    return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: string) {
+export function formatDate(date: string, useTime: boolean = true) {
    const d = new Date(date);
    // Format jam:menit, misal: 14:05
    const jam = d.getHours().toString().padStart(2, "0");
@@ -15,5 +15,8 @@ export function formatDate(date: string) {
       month: "short",
       day: "numeric",
    });
-   return `${jam}:${menit} - ${tanggal}`;
+   if (useTime) {
+      return `${jam}:${menit} - ${tanggal}`;
+   }
+   return `${tanggal}`;
 }

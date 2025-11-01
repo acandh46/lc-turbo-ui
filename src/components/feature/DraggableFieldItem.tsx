@@ -37,8 +37,6 @@ export const DraggableFieldItem = ({
    const [staticLabel, setStaticLabel] = useState(field.label);
 
    useEffect(() => {
-      // If the editor is closed, keep the static label synced with the global state.
-      // If it's open, the static label remains frozen, preventing real-time updates in the header.
       if (!isEditing) {
          setStaticLabel(field.label);
       }
@@ -79,13 +77,11 @@ export const DraggableFieldItem = ({
                      <ChevronRight size={16} />
                   )}
                </button>
-               <p className="font-medium text-gray-800">
-                  {field.type === "HEADER" ? (
-                     "Information"
-                  ) : (
-                     <RenderHtml content={staticLabel} className="text-sm" />
-                  )}
-               </p>
+               {field.type === "HEADER" ? (
+                  <p className="font-medium text-gray-800">Information</p>
+               ) : (
+                  <RenderHtml content={staticLabel} className="text-sm" />
+               )}
             </div>
             <div className="flex items-center gap-6 ml-auto">
                {!isHeader && (

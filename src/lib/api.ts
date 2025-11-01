@@ -97,11 +97,10 @@ export const agentApi = {
       return response.data;
    },
 
-   changeCanned: async (
-      data: any,
-      cannedId?: string,
-      isUpdate: boolean = false
-   ) => {},
+   changeCanned: async (data: any): Promise<AgentResponse> => {
+      const response = await api.post("/agent/canned", data);
+      return response.data;
+   },
 };
 
 export const userApi = {

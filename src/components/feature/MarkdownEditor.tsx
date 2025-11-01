@@ -27,6 +27,7 @@ interface MarkdownEditorProps {
    onChange: (content: string) => void;
    variant?: "short" | "long";
    useBullet?: boolean;
+   placeHolder?: string;
 }
 
 export const MarkdownEditor = ({
@@ -34,6 +35,7 @@ export const MarkdownEditor = ({
    onChange,
    variant = "short",
    useBullet = true,
+   placeHolder = "",
 }: MarkdownEditorProps) => {
    const [isFocused, setIsFocused] = useState(false);
 
@@ -95,6 +97,7 @@ export const MarkdownEditor = ({
          .focus()
          .extendMarkRange("link")
          .setLink({ href: url })
+         .setMark("underline")
          .run();
    }, [editor]);
 
@@ -106,11 +109,11 @@ export const MarkdownEditor = ({
       <div className="relative">
          <EditorContent editor={editor} />
          {isFocused && (
-            <div className="bg-white border rounded-md shadow-xs flex overflow-hidden mt-2">
+            <div className=" hover:dark:text-black border rounded-md shadow-xs flex overflow-hidden mt-2">
                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleBold().run()}
-                  className={`p-2 hover:bg-gray-100 ${
+                  className={`p-2 hover:bg-gray-100/50 ${
                      editor.isActive("bold") ? "bg-gray-200" : ""
                   }`}
                >
@@ -119,7 +122,7 @@ export const MarkdownEditor = ({
                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleItalic().run()}
-                  className={`p-2 hover:bg-gray-100 ${
+                  className={`p-2 hover:bg-gray-100/50 ${
                      editor.isActive("italic") ? "bg-gray-200" : ""
                   }`}
                >
@@ -128,7 +131,7 @@ export const MarkdownEditor = ({
                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={setLink}
-                  className={`p-2 hover:bg-gray-100 ${
+                  className={`p-2 hover:bg-gray-100/50 ${
                      editor.isActive("link") ? "bg-gray-200" : ""
                   }`}
                >
@@ -141,7 +144,7 @@ export const MarkdownEditor = ({
                         onClick={() =>
                            editor.chain().focus().toggleBulletList().run()
                         }
-                        className={`p-2 hover:bg-gray-100 ${
+                        className={`p-2 hover:bg-gray-100/50 ${
                            editor.isActive("bulletList") ? "bg-gray-200" : ""
                         }`}
                      >
@@ -152,7 +155,7 @@ export const MarkdownEditor = ({
                         onClick={() =>
                            editor.chain().focus().toggleOrderedList().run()
                         }
-                        className={`p-2 hover:bg-gray-100 ${
+                        className={`p-2 hover:bg-gray-100/50 ${
                            editor.isActive("orderedList") ? "bg-gray-200" : ""
                         }`}
                      >

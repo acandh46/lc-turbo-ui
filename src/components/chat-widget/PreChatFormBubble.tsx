@@ -51,9 +51,10 @@ export const PreChatFormBubble = ({
                className="text-sm font-normal text-gray-600 dark:text-gray-400 truncate gap-2"
                style={{ maxWidth: "100%" }}
             >
-               <span className="inline-block max-w-full truncate align-bottom">
-                  <RenderHtml content={field.label} />
-               </span>
+               <RenderHtml
+                  content={field.label}
+                  className="inline-block max-w-full truncate align-bottom"
+               />
                {field.required && <span className="text-red-500 ">*</span>}
             </Label>
             {isInputType && (

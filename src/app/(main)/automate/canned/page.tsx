@@ -6,38 +6,42 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, X } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useModalStore } from "@/store/useModalStore";
-import { AgentItem } from "@/types/agent.types";
+import { AgentCannedResponse, AgentItem } from "@/types/agent.types";
 import { toast } from "sonner";
 import { agentApi } from "@/lib/api";
 import SelectBox from "@/components/ui/SelectBox";
 import { Input } from "@/components/ui/input";
-
-// Mock data for canned responses
-const mockCannedResponses = [
-   { id: 1, name: "Greeting", content: "Hello! How can I help you today?" },
-   { id: 2, name: "Farewell", content: "Goodbye! Have a great day." },
-   {
-      id: 3,
-      name: "Support",
-      content: "Please provide me with your support ticket number.",
-   },
-];
+import LoadingComponent from "@/components/CustomUi/LoadingComp";
+import { CannedResponseItem } from "@/components/canned-response/CannedResponseItem";
 
 const CannedResponsePage = () => {
    const [agentId, setAgentId] = useState<string | null>(null);
-   const [cannedResponses, setCannedResponses] = useState<any[]>([]);
+   const [cannedResponses, setCannedResponses] = useState<
+      AgentCannedResponse[]
+   >([]);
    const [agents, setAgents] = useState<AgentItem[]>([]);
+
+   const [isLoading, setIsLoading] = useState(false);
    const [loadAgent, setLoadAgent] = useState(true);
    const [showAdd, setShowAdd] = useState(false);
    const searchParams = useSearchParams();
    const [searchQuery, setSearchQuery] = useState("");
-   const { onOpen } = useModalStore();
+   const { onOpen, isOpen } = useModalStore();
    const { user } = useAuth();
 
    const fetchCanned = useCallback(async () => {
-      console.log("fetched");
-      // TODO: Fetch canned responses for the given agentId
-      // This function can be expanded in the future
+      setIsLoading(true);
+      let agentIdFromStorage = localStorage.getItem("agentId");
+      try {
+         const response = await agentApi.getCanned(agentIdFromStorage!);
+         setCannedResponses(response);
+      } catch (error) {
+         toast.error("An unexpected error occurred. Please try again.", {
+            position: "top-right",
+         });
+      } finally {
+         setIsLoading(false);
+      }
    }, []);
 
    const fetchAgents = useCallback(async () => {
@@ -86,7 +90,6 @@ const CannedResponsePage = () => {
 
    useEffect(() => {
       if (agentId) {
-         // TODO: Fetch canned responses from the backend using the agentId
          fetchCanned();
       }
    }, [agentId]);
@@ -98,12 +101,13 @@ const CannedResponsePage = () => {
             <div className="flex flex-row items-center gap-x-2">
                <Button
                   className="cursor-pointer"
-                  // onClick={() =>
-                  //    onOpen("fetchAgentCanned", {
-                  //       // onSuccess: fetchUsers,
-                  //       // user: user,
-                  //    })
-                  // }
+                  disabled={isOpen}
+                  onClick={() =>
+                     onOpen("cannedResponse", {
+                        onSuccess: fetchCanned,
+                        agentId: agentId,
+                     })
+                  }
                >
                   <PlusCircle className="mr-1 h-4 w-4" />
                   Add Response
@@ -114,8 +118,10 @@ const CannedResponsePage = () => {
                         value: String(agent.id),
                         label: agent.agentName.toUpperCase(),
                      }))}
+                     disabled={isLoading}
                      value={agentId?.toString()}
                      onChange={(value: any) => {
+                        localStorage.setItem("agentId", value);
                         setAgentId(value);
                      }}
                      placeholder="Select Agent"
@@ -123,7 +129,7 @@ const CannedResponsePage = () => {
                   />
                )}
                <div className="bg-gray-300 p-2 items-center rounded-md font-semibold">
-                  23 canned responses
+                  {`${cannedResponses.length} canned responses`}
                </div>
             </div>
             <div className="relative flex items-center">
@@ -133,8 +139,8 @@ const CannedResponsePage = () => {
                </span>
                <Input
                   type="text"
-                  // value={searchQuery}
-                  // onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search responses..."
                   className="pl-9 pr-8 py-1.5 rounded-lg border border-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus-visible:ring-blue-300 focus:ring-blue-300 bg-white text-black dark:bg-slate-900 dark:text-white dark:border-slate-700"
                   style={{ minWidth: 180 }}
@@ -146,19 +152,26 @@ const CannedResponsePage = () => {
                      size="icon"
                      className="absolute right-2 text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
                      tabIndex={-1}
-                     // onClick={() => setSearchQuery("")}
+                     onClick={() => setSearchQuery("")}
                   >
                      <X className="w-4 h-4" />
                   </Button>
                )}
             </div>
          </div>
-         <div className="flex flex-col overflow-auto px-5 gap-1">
-            {Array.from({ length: 60 }).map((_, idx) => (
-               <p className="text-slate-500" key={idx}>
-                  Bangsat
-               </p>
-            ))}
+         <div className="flex flex-col overflow-auto px-5 gap-2">
+            {isLoading ? (
+               <LoadingComponent />
+            ) : (
+               cannedResponses.map((item) => (
+                  <CannedResponseItem
+                     key={item.id}
+                     canned={item}
+                     refetch={fetchCanned}
+                     agentId={agentId!}
+                  />
+               ))
+            )}
          </div>
       </div>
    );
