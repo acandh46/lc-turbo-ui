@@ -20,3 +20,24 @@ export function formatDate(date: string, useTime: boolean = true) {
    }
    return `${tanggal}`;
 }
+
+export function randomColor() {
+   // Generate smoother pastel colors using HSL
+   const hue = Math.floor(Math.random() * 360); // 0-359
+   const saturation = 60 + Math.random() * 20; // 60-80%
+   const lightness = 70 + Math.random() * 10; // 70-80%
+   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+export function timeAgo(date: string) {
+   const d = new Date(date);
+   const now = new Date();
+   const diff = Math.floor((now.getTime() - d.getTime()) / 1000); // detik
+
+   if (diff < 60) return `${diff} seconds ago`;
+   if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+   if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+   if (diff < 2592000) return `${Math.floor(diff / 86400)} days ago`;
+   if (diff < 31536000) return `${Math.floor(diff / 2592000)} months ago`;
+   return `${Math.floor(diff / 31536000)} years ago`;
+}
