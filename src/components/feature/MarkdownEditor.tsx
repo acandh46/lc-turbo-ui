@@ -113,7 +113,7 @@ export const MarkdownEditor = ({
                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleBold().run()}
-                  className={`p-2 hover:bg-gray-100/50 ${
+                  className={`p-2 hover:bg-gray-100/50 cursor-pointer ${
                      editor.isActive("bold") ? "bg-gray-200" : ""
                   }`}
                >
@@ -122,7 +122,7 @@ export const MarkdownEditor = ({
                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleItalic().run()}
-                  className={`p-2 hover:bg-gray-100/50 ${
+                  className={`p-2 hover:bg-gray-100/50 cursor-pointer ${
                      editor.isActive("italic") ? "bg-gray-200" : ""
                   }`}
                >
@@ -131,7 +131,7 @@ export const MarkdownEditor = ({
                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={setLink}
-                  className={`p-2 hover:bg-gray-100/50 ${
+                  className={`p-2 hover:bg-gray-100/50 cursor-pointer ${
                      editor.isActive("link") ? "bg-gray-200" : ""
                   }`}
                >
@@ -144,7 +144,7 @@ export const MarkdownEditor = ({
                         onClick={() =>
                            editor.chain().focus().toggleBulletList().run()
                         }
-                        className={`p-2 hover:bg-gray-100/50 ${
+                        className={`p-2 hover:bg-gray-100/50 cursor-pointer ${
                            editor.isActive("bulletList") ? "bg-gray-200" : ""
                         }`}
                      >
@@ -155,7 +155,7 @@ export const MarkdownEditor = ({
                         onClick={() =>
                            editor.chain().focus().toggleOrderedList().run()
                         }
-                        className={`p-2 hover:bg-gray-100/50 ${
+                        className={`p-2 hover:bg-gray-100/50 cursor-pointer ${
                            editor.isActive("orderedList") ? "bg-gray-200" : ""
                         }`}
                      >

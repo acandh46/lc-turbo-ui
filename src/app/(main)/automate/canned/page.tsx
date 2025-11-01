@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import HeaderContent from "@/components/layout/HeaderContent";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, X } from "lucide-react";
+import { Database, PlusCircle, Search, X } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useModalStore } from "@/store/useModalStore";
 import { AgentCannedResponse, AgentItem } from "@/types/agent.types";
@@ -94,6 +94,13 @@ const CannedResponsePage = () => {
       }
    }, [agentId]);
 
+   const filteredResponses = cannedResponses.filter(
+      (response) =>
+         response.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         (response.shortcut &&
+            response.shortcut.toLowerCase().includes(searchQuery.toLowerCase()))
+   );
+
    return (
       <div className="relative flex flex-1 flex-col bg-slate-50 rounded-2xl overflow-hidden">
          <HeaderContent title="Response List" />
@@ -159,11 +166,16 @@ const CannedResponsePage = () => {
                )}
             </div>
          </div>
-         <div className="flex flex-col overflow-auto px-5 gap-2">
+         <div className="flex flex-col flex-1 overflow-auto px-5 gap-2">
             {isLoading ? (
                <LoadingComponent />
+            ) : filteredResponses.length === 0 && searchQuery !== "" ? (
+               <div className="flex flex-1 items-center justify-center p-4  text-gray-500 dark:text-gray-400 gap-2">
+                  <Database className="h-4 w-4" />
+                  No canned responses found matching your search.
+               </div>
             ) : (
-               cannedResponses.map((item) => (
+               filteredResponses.map((item) => (
                   <CannedResponseItem
                      key={item.id}
                      canned={item}

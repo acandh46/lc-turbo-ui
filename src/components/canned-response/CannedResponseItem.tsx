@@ -26,7 +26,7 @@ export const CannedResponseItem = ({
          onMouseLeave={() => setShowAction(false)}
       >
          <div className="flex flex-col gap-2">
-            <div className="flex flex-row justify-between py-2">
+            <div className="flex flex-row justify-between ">
                <div className="bg-white flex p-2 gap-1">
                   <span className="text-blue-600 font-semibold">#</span>
                   <span className="font-semibold">{canned.shortcut}</span>
@@ -64,7 +64,7 @@ export const CannedResponseItem = ({
             </div>
 
             <RenderHtml content={canned.content} />
-            <div className="flex gap-1 items-center">
+            <div className="flex gap-1 items-center mt-2">
                <span className="font-semibold text-xs">
                   <Archive size={12} />
                </span>

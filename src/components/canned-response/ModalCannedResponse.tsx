@@ -146,6 +146,7 @@ export const ModalCannedResponse = () => {
                      <FormItem className="w-full flex items-center space-x-2">
                         <Switch
                            checked={field.value}
+                           className="cursor-pointer"
                            onCheckedChange={(isEnabled) => {
                               field.onChange(isEnabled);
                            }}
